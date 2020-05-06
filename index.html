@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="result_container"></div>
+    <script>
+        
+        var id_array = new Array();
+        var all_path_array = new Array();
+
+        class Index {
+            constructor(row, col) {
+                this.row = row;
+                this.col = col;
+            }
+        }
+
+        class Neighbours {
+            constructor(row, col) {
+                this.top = new Index(row - 1, col);
+                this.right = new Index(row, col + 1);
+                this.bottom = new Index(row + 1, col);
+                this.left = new Index(row, col - 1);
+            }
+        }
+
+        class CarryArray {
+            constructor() {
+                this.start_index = new Index(0, 0);
+                this.pathArray = new Array();
+                this.current_index = new Index(0, 0);
+                this.pathArray.push(new Index(0, 0));
+            }
+        }
+
+        class Matrix {
+            constructor(rows, cols) {
+                this.rows = rows;
+                this.cols = cols;
+                this._matrix = Array(rows);
+                for (var i = 0; i < this._matrix.length; i++) {
+                    this._matrix[i] = Array(cols);
+                }
+                for (var i = 0; i < rows; i++) {
+                    for (var j = 0; j < cols; j++) {
+                        var arr = new Array();
+                        arr['current_index'] = new Index(i, j);
+                        arr['neighbours'] = new Neighbours(i, j);
+                        this._matrix[i][j] = arr;
+                    }
+                }
+            }
+
+            __match(v1, _in, direction) {
+                for (var i = 0; i < _in.length; i++) {
+                    if (_in[i].row == v1.row && _in[i].col == v1.col) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            __findPath(data) {
+                var _nbrs = this._matrix[data.current_index.row][data.current_index.col].neighbours;
+                var _tr = this.rows;
+                var _tc = this.cols;
+                if (data.pathArray.length <= (_tr * _tc)) {
+                    if (_nbrs.top.row >= 0 && _nbrs.top.col >=0 && _nbrs.top.row < _tr && _nbrs.top.col < _tc && !this.__match(_nbrs.top, data.pathArray, "top")) {
+                        var _t_top = new CarryArray();
+                        _t_top.current_index = _nbrs.top;
+                        _t_top.start_index = data.start_index;
+                        _t_top.pathArray = Object.assign([], data.pathArray);
+                        _t_top.pathArray.push(_nbrs.top);
+                        this.__findPath(_t_top);
+                    }
+                    if (_nbrs.right.row >= 0 && _nbrs.right.col >=0 && _nbrs.right.row < _tr && _nbrs.right.col < _tc && !this.__match(_nbrs.right, data.pathArray, "right")) {
+                        var _t_rigth = new CarryArray();
+                        _t_rigth.current_index = _nbrs.right;
+                        _t_rigth.start_index = data.start_index;
+                        _t_rigth.pathArray = Object.assign([], data.pathArray);
+                        _t_rigth.pathArray.push(_nbrs.right);
+                        this.__findPath(_t_rigth);
+                    }
+                    if (_nbrs.bottom.row >= 0 && _nbrs.bottom.col >=0 && _nbrs.bottom.row < _tr && _nbrs.bottom.col < _tc && !this.__match(_nbrs.bottom, data.pathArray, "bottom")) {
+                        var _t_bottom = new CarryArray();
+                        _t_bottom.current_index = _nbrs.bottom;
+                        _t_bottom.start_index = data.start_index;
+                        _t_bottom.pathArray = Object.assign([], data.pathArray);
+                        _t_bottom.pathArray.push(_nbrs.bottom);
+                        this.__findPath(_t_bottom);
+                    }
+                    if (_nbrs.left.row >= 0 && _nbrs.left.col >=0 && _nbrs.left.row < _tr && _nbrs.left.col < _tc && !this.__match(_nbrs.left, data.pathArray, "left")) {
+                        var _t_left = new CarryArray();
+                        _t_left.current_index = _nbrs.left;
+                        _t_left.start_index = data.start_index;
+                        _t_left.pathArray = Object.assign([], data.pathArray);
+                        _t_left.pathArray.push(_nbrs.left);
+                        this.__findPath(_t_left);
+                    }
+                }
+                if (data.pathArray.length == (_tr * _tc)) {
+                    all_path_array.push(data.pathArray);
+                }
+            }
+        }
+        var cells = 3;
+        var obj = new Matrix(cells, cells);
+        obj.__findPath(new CarryArray());
+        createResultCanvas(all_path_array);
+        console.log("All Paths", all_path_array);
+        drawAll(id_array, all_path_array);
+
+        function getPosition(row, col, ar) {
+            for (var i = 0; i < ar.length; i++) {
+                if (ar[i].row == row && ar[i].col == col) {
+                    return i+1;
+                }
+            }
+            return false;
+        }
+        function print_tbl(data_ar) {
+            var row = col = Math.sqrt(data_ar.length);
+            var tblstr = "<table class='tbl'>";
+            for (var i = 0; i < row; i++) {
+                tblstr += "<tr>";
+                for (var j = 0; j < col; j++) {
+                    tblstr += "<td>"+getPosition(i, j, data_ar)+"</td>";
+                }
+                tblstr += "</tr>";
+            }
+            tblstr += "</table>";
+            document.getElementById("result_container").innerHTML += tblstr;
+        }
+
+        function createResultCanvas(all_path) {
+            var canvas_html = '';
+            all_path.forEach(data_ar => {
+                var canvas_id = generateId();
+                var row = col = Math.sqrt(data_ar.length);
+                id_array.push(canvas_id);
+                canvas_html += '<canvas id="cnvs'+ canvas_id +'" width="'+ (col * 40) +'px" height="'+ (row * 40) +'px" style="background: #fff; margin:20px"></canvas>';
+            });
+            document.getElementById("result_container").innerHTML += canvas_html;
+        }
+
+        function generateId() {   
+            var random_id = Math.floor(1000 + Math.random() * 9000);
+            if (id_array.includes(random_id)) {
+                generateId();
+            }
+            return random_id;
+        }
+
+        function drawAll(all_canvas_id, all_paths) {
+            var index = 0;
+            var row = Math.sqrt(all_paths[0].length);
+            console.log("Row: ", row);
+            var counter_ = 0;
+            all_canvas_id.forEach(canvas_id => {
+                var path = all_paths[i];
+                var canvas = document.getElementById("cnvs" + canvas_id);
+                var context = canvas.getContext("2d");
+                var select_row = all_paths[index][all_paths[index].length - 1].row;
+                var select_col = all_paths[index][all_paths[index].length - 1].col;
+                console.log("All Paths: ", all_paths[index][all_paths[index].length - 1]);
+                console.log("All Paths: ", all_paths[index]);
+                if (select_row == row -2 && select_col == row -2) {
+                    console.log("select_row: ", select_row);
+                    console.log("select_col: ", select_col);
+                    context.beginPath();
+                    context.fillStyle = "#bbc0c4";
+                    context.fillRect(0, 0, canvas.width, canvas.height);
+                    context.closePath();
+                    counter_ += 1;
+                }
+                context.beginPath();
+                for (var i = 0; i <= row; i++) {
+                    context.moveTo((i * 40), 0);
+                    context.lineTo((i * 40), row * 40);
+                    context.moveTo(0, (i * 40));
+                    context.lineTo(row * 40, (i * 40));
+                }
+                context.strokeStyle = "black";
+                context.stroke();
+                context.closePath();
+                context.beginPath();
+                for (var i = 0; i < all_paths[index].length; i++) {
+                    var x = (all_paths[index][i].row * 40) + 20;
+                    var y = (all_paths[index][i].col * 40) + 20;
+                    if (i == 0) {
+                        context.moveTo(x, y);
+                    } else {
+                        context.lineTo(x, y);
+                    }
+                };
+                context.strokeStyle = "red";
+                context.stroke();
+                context.closePath();
+
+                var x1 = (all_paths[index][0].row * 40) + 20;
+                var y1 = (all_paths[index][0].col * 40) + 20;
+                context.beginPath();
+                context.arc(x1, y1, 5, 0, 2 * Math.PI);
+                context.fillStyle = "green";
+                context.fill();
+                context.closePath();
+
+                var x2 = (all_paths[index][all_paths[index].length - 1].row * 40) + 20;
+                var y2 = (all_paths[index][all_paths[index].length -1 ].col * 40) + 20;
+                context.beginPath();
+                context.arc(x2, y2, 5, 0, 2 * Math.PI);
+                context.fillStyle = "red";
+                context.fill();
+                context.closePath();
+                console.log("Total matches: ", counter_);
+                index++;
+            });
+        }
+    </script>
+    <style>
+        .tbl {
+            border: solid 2px #000;
+            float: left;
+        }
+
+        .tbl tr td {
+            height: 40px;
+            width: 40px;
+            border: dotted 1px;
+            margin: auto;
+            justify-content: center;
+        }
+    </style>
+</body>
+</html>
